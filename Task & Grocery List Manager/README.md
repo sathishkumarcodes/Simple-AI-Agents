@@ -1,4 +1,4 @@
-🧠 **Task & Grocery List AI Agent**
+🧠 **Task & Grocery List AI**
 
 📱 WhatsApp • 🤖 n8n AI Agent • 🔮 Google Gemini • 📊 Google Sheets
 
