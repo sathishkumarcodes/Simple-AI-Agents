@@ -1,0 +1,540 @@
+{
+  "name": "Tasks & Groceries Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant that manages tasks and groceries via WhatsApp.\n\nWhen users want to remove items:\n1. First call the appropriate \"Get\" tool (Get Grocery or Get All tasks) to see the current list\n2. Show the user the numbered list\n3. Ask them which row number they want to delete\n4. Once they provide the row number, call the appropriate \"Remove\" tool with that rowID\n\nRemember: Row 1 is the header row. Data starts at row 2.\n\nFor adding items, use the appropriate \"Add\" tool with the item details.\n\nAlways be friendly and confirm actions after completion."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        4200,
+        0
+      ],
+      "id": "64b7bf2f-a0c9-4007-9b5d-82391f21a2b5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3824,
+        224
+      ],
+      "id": "d37dd0af-f6e8-4678-8adc-d4ed1c9d77b7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XB5l31Rce1HeLwyw",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json.contacts?.[0]?.wa_id || $('WhatsApp Trigger').item.json.statuses?.[0]?.recipient_id || 'default-session' }}",
+        "contextWindowLength": 1000
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        3952,
+        224
+      ],
+      "id": "03c5f541-71d8-44bd-a7f4-54129165579c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4",
+          "mode": "list",
+          "cachedResultName": "Groceries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        4080,
+        224
+      ],
+      "id": "db83dffa-3cab-439a-acc6-5629d28a1a0f",
+      "name": "Get Grocery",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KT1aJAnAPRKYyT4Q",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4",
+          "mode": "list",
+          "cachedResultName": "Groceries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date Added": "={{ $now.format('yyyy-MM-dd') }}",
+            "Store": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Store', ``, 'string') }}",
+            "Grocery": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Grocery', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Grocery",
+              "displayName": "Grocery",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Store",
+              "displayName": "Store",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Added",
+              "displayName": "Date Added",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        4208,
+        224
+      ],
+      "id": "1382869f-d41e-46d6-b87c-50ecb0a2bfaf",
+      "name": "Adding groceries",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KT1aJAnAPRKYyT4Q",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4",
+          "mode": "list",
+          "cachedResultName": "Groceries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "startIndex": "={{ $fromAI('rowID', 'The row number to delete (starting from 1, where 1 is the header row)', 'number') }}"
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        4336,
+        224
+      ],
+      "id": "0af8df33-557e-48e8-ba3f-4e78faa287e6",
+      "name": "Remove from grocery list",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KT1aJAnAPRKYyT4Q",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {
+          "messageStatusUpdates": [
+            "all"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        3600,
+        0
+      ],
+      "id": "62b695ed-f336-4ceb-82d6-cf4f1bd790af",
+      "name": "WhatsApp Trigger",
+      "webhookId": "a1981f43-e2b9-4f9a-a159-5100640cdfa5",
+      "executeOnce": false,
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "rWgTbMcWw3NJKwN2",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=946348518553104",
+        "recipientPhoneNumber": "={{ $json.phoneNumber }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        5152,
+        0
+      ],
+      "id": "983aa798-11c3-44c4-b014-e3e96dbd3e25",
+      "name": "Send message",
+      "webhookId": "cf64c6aa-6550-4cd9-887b-0e2c3451c177",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "credentials": {
+        "whatsAppApi": {
+          "id": "HK0yrFOQ3mf9AuPg",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4",
+          "mode": "list",
+          "cachedResultName": "Groceries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1303388561,
+          "mode": "list",
+          "cachedResultName": "Tasks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit#gid=1303388561"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Taskname": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Taskname', ``, 'string') }}",
+            "Date Added": "={{ $now.format('yyyy-MM-dd') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Taskname",
+              "displayName": "Taskname",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Added",
+              "displayName": "Date Added",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        4464,
+        224
+      ],
+      "id": "5f1cdf71-b81a-4b7f-aa9a-b52bf069f09c",
+      "name": "Add tasks",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KT1aJAnAPRKYyT4Q",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4",
+          "mode": "list",
+          "cachedResultName": "Groceries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1303388561,
+          "mode": "list",
+          "cachedResultName": "Tasks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit#gid=1303388561"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        4592,
+        224
+      ],
+      "id": "a05a4c3d-3029-4c8f-895f-16703fc303df",
+      "name": "Get All tasks",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KT1aJAnAPRKYyT4Q",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4",
+          "mode": "list",
+          "cachedResultName": "Groceries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1303388561,
+          "mode": "list",
+          "cachedResultName": "Tasks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LE4bu1m1LXt-uNxkXCl9pJ3sMxE3FQCgeGQlWNKU_C4/edit#gid=1303388561"
+        },
+        "startIndex": "={{ $fromAI('rowID', 'The row number to delete (starting from 1, where 1 is the header row)', 'number') }}"
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        4720,
+        224
+      ],
+      "id": "5d3d1d58-ec64-4b0f-a8e1-b375b9454aff",
+      "name": "Remove task",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KT1aJAnAPRKYyT4Q",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "phoneNumber",
+              "value": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "f7dee3b6-0521-4485-8873-7d13315d7e04",
+      "name": "Create Recipients List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4928,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Grocery": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adding groceries": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove from grocery list": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add tasks": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All tasks": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create Recipients List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Recipients List": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1c233ac0-d69e-4285-b059-d3c4cf6c737e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8a6f70608b2179dcdb4245c94a4c86eb92c39f03d829e8c791f11691c045c684"
+  },
+  "id": "d3luaaBx41PVZ9hg",
+  "tags": []
+}
