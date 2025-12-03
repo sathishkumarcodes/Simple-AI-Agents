@@ -23,5 +23,10 @@ All data is stored in two sheets:
 
 The workflow connects WhatsApp → AI → Sheets → WhatsApp reply.
 
+n8n Workflow below:
+
+<img width="2278" height="672" alt="image" src="https://github.com/user-attachments/assets/360e86f2-6ca0-4a18-a805-7be127289e90" />
+
+
 
 
