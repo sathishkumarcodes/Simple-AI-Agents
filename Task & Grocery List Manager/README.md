@@ -25,7 +25,7 @@ The workflow connects WhatsApp → AI → Sheets → WhatsApp reply.
 
 n8n Workflow below:
 
-<img width="2278" height="672" alt="image" src="https://github.com/user-attachments/assets/360e86f2-6ca0-4a18-a805-7be127289e90" />
+<img width="1139" height="353" alt="Screenshot 2025-12-02 at 5 39 08 PM" src="https://github.com/user-attachments/assets/2364f4ce-d8c9-44d8-9071-62b4cfd42b0a" />
 
 
 
