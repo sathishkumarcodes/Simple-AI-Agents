@@ -1,0 +1,539 @@
+{
+  "name": "Subscription Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "23c26d97-2cd2-4dea-9b06-657a98060621",
+      "name": "Weekly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        6208,
+        2480
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1okblt4V81oJFWKSBrNQ_tWmi0ry1XbAwC6cOuz9KT6w",
+          "mode": "list",
+          "cachedResultName": "Subscriptions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1okblt4V81oJFWKSBrNQ_tWmi0ry1XbAwC6cOuz9KT6w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1okblt4V81oJFWKSBrNQ_tWmi0ry1XbAwC6cOuz9KT6w/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "e70db24f-e32b-4590-b258-0dff6020e4ea",
+      "name": "Read Subscriptions",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        6432,
+        2480
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KT1aJAnAPRKYyT4Q",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all subscription items from the input\nconst subscriptions = $input.all();\n\n// Separate subscriptions by type\nconst monthlySubscriptions = [];\nconst annualSubscriptions = [];\n\nfor (const item of subscriptions) {\n  const sub = item.json;\n  \n  if (sub.Type && (sub.Type.toLowerCase() === 'annually' || sub.Type.toLowerCase() === 'annual')) {\n    annualSubscriptions.push(sub);\n  } else {\n    monthlySubscriptions.push(sub);\n  }\n}\n\n// Generate HTML email with all subscriptions\nlet html = '<html><body style=\"font-family: Arial, sans-serif;\">';\nhtml += '<h2 style=\"color: #333;\">Weekly Subscription Summary</h2>';\n\n// Monthly Subscriptions Section\nif (monthlySubscriptions.length > 0) {\n  html += '<h3 style=\"color: #0066cc;\">Monthly Subscriptions</h3>';\n  html += '<table style=\"border-collapse: collapse; width: 100%; margin-bottom: 20px;\">';\n  html += '<tr style=\"background-color: #e3f2fd;\">';\n  html += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Subscription</th>';\n  html += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Amount</th>';\n  html += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Next Payment</th>';\n  html += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Last Payment</th>';\n  html += '</tr>';\n  \n  for (const sub of monthlySubscriptions) {\n    html += '<tr>';\n    html += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + sub.Name + '</td>';\n    html += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + sub.Currency + ' ' + sub.Amount + '</td>';\n    html += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + (sub.next_payment_date || 'N/A') + '</td>';\n    html += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + (sub.last_payment_date || 'N/A') + '</td>';\n    html += '</tr>';\n  }\n  html += '</table>';\n}\n\n// Annual Subscriptions Section\nif (annualSubscriptions.length > 0) {\n  html += '<h3 style=\"color: #ff6600;\">Annual Subscriptions</h3>';\n  html += '<table style=\"border-collapse: collapse; width: 100%; margin-bottom: 20px;\">';\n  html += '<tr style=\"background-color: #fff3e0;\">';\n  html += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Subscription</th>';\n  html += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Amount</th>';\n  html += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Next Payment</th>';\n  html += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Last Payment</th>';\n  html += '</tr>';\n  \n  for (const sub of annualSubscriptions) {\n    html += '<tr>';\n    html += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + sub.Name + '</td>';\n    html += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + sub.Currency + ' ' + sub.Amount + '</td>';\n    html += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + (sub.next_payment_date || 'N/A') + '</td>';\n    html += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + (sub.last_payment_date || 'N/A') + '</td>';\n    html += '</tr>';\n  }\n  html += '</table>';\n}\n\nhtml += '<hr style=\"margin: 20px 0;\">';\nhtml += '<p style=\"color: #666; font-size: 12px;\">This is an automated weekly summary of all your subscriptions.</p>';\nhtml += '</body></html>';\n\n// Get email from first subscription\nconst email = subscriptions[0]?.json?.email;\n\n// Return single item with summary data - always send the summary\nreturn [{\n  json: {\n    hasSubscriptions: true,\n    monthlyCount: monthlySubscriptions.length,\n    annualCount: annualSubscriptions.length,\n    html: html,\n    email: email\n  }\n}];"
+      },
+      "id": "2dee4d07-515e-49f8-971a-2e135f45bf03",
+      "name": "Analyze Due Dates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7776,
+        2384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.hasSubscriptions }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4bd70a0c-8ba0-4188-92ea-07cc79497953",
+      "name": "Check If Any Due",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        8000,
+        2384
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "<9.sathish@gmail.com>",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Weekly Subscription Summary",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "4a6c0412-d936-4192-ba40-3b1b30f3172d",
+      "name": "Send Weekly Summary",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        8224,
+        2384
+      ],
+      "webhookId": "fdb5f2c2-c112-4e6b-a654-415dee50dc31",
+      "credentials": {
+        "smtp": {
+          "id": "Wfa7a0NVshWkVPON",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all subscription items from the input\nconst subscriptions = $input.all();\n\n// Get today's date\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\n// Function to calculate next payment date based on last payment date and Type\nfunction calculateNextPaymentDate(lastPaymentDate, subscriptionType) {\n  if (!lastPaymentDate) return null;\n  \n  const lastDate = new Date(lastPaymentDate);\n  const nextDate = new Date(lastDate);\n  \n  if (subscriptionType && subscriptionType.toLowerCase() === 'monthly') {\n    // Add 1 month\n    nextDate.setMonth(nextDate.getMonth() + 1);\n  } else if (subscriptionType && (subscriptionType.toLowerCase() === 'annually' || subscriptionType.toLowerCase() === 'annual')) {\n    // Add 1 year\n    nextDate.setFullYear(nextDate.getFullYear() + 1);\n  } else {\n    // Default to monthly if not specified\n    nextDate.setMonth(nextDate.getMonth() + 1);\n  }\n  \n  // Format as YYYY-MM-DD\n  return nextDate.toISOString().split('T')[0];\n}\n\n// Process each subscription\nconst updatedSubscriptions = subscriptions.map(item => {\n  const sub = item.json;\n  \n  // Calculate next payment date based on last_payment_date\n  const nextPaymentDate = calculateNextPaymentDate(\n    sub.last_payment_date,\n    sub.Type\n  );\n  \n  // Check if today equals or is past the next payment date\n  const nextPayment = new Date(sub.Next_payment);\n  nextPayment.setHours(0, 0, 0, 0);\n  \n  let updatedLastPaymentDate = sub.last_payment_date;\n  \n  // If today is on or after the next payment date, update last_payment_date to next_payment\n  if (sub.Next_payment && today >= nextPayment) {\n    updatedLastPaymentDate = sub.Next_payment;\n  }\n  \n  return {\n    json: {\n      ...sub,\n      calculated_next_payment: nextPaymentDate,\n      updated_last_payment_date: updatedLastPaymentDate\n    }\n  };\n});\n\nreturn updatedSubscriptions;"
+      },
+      "id": "3c0fd098-5e00-4fc6-8ad2-03849c414150",
+      "name": "Calculate Next Payment Dates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6656,
+        2480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1okblt4V81oJFWKSBrNQ_tWmi0ry1XbAwC6cOuz9KT6w",
+          "mode": "list",
+          "cachedResultName": "Subscriptions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1okblt4V81oJFWKSBrNQ_tWmi0ry1XbAwC6cOuz9KT6w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1okblt4V81oJFWKSBrNQ_tWmi0ry1XbAwC6cOuz9KT6w/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Next_payment": "={{ $json.calculated_next_payment }}",
+            "last_payment_date": "={{ $json.updated_last_payment_date }}",
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Next_payment",
+              "displayName": "Next_payment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Expiry_date",
+              "displayName": "Expiry_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "is_active",
+              "displayName": "is_active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_payment_date",
+              "displayName": "last_payment_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "21cb3a2e-4782-42be-ba14-18533312f481",
+      "name": "Update Next Payment Dates",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        6880,
+        2480
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "KT1aJAnAPRKYyT4Q",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "Setup:\nCreate Google Sheet with a sheet named \"Subscriptions\" containing these columns:\n\nname (or subscription_name)\nvendor\namount\ncurrency\nbilling_frequency (values: \"Monthly\" or \"Annually\")\nlast_payment_date (YYYY-MM-DD format)\nnext_payment_date (will be auto-calculated and updated)\nexpiry_date (YYYY-MM-DD format)\nemail (your email address for receiving summaries)\nConfigure Google Sheets Document ID:\n\nSet the same Google Sheets Document ID in both \"Read Subscriptions\" and \"Update Next Payment Dates\" nodes\nConfigure Email:\n\nSet your \"From Email\" address in the \"Send Weekly Summary\" node",
+        "height": 352,
+        "width": 816
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        6192,
+        2080
+      ],
+      "typeVersion": 1,
+      "id": "686b228a-f993-4ea0-ae71-4d7112ed12dd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all subscription items from the input\nconst subscriptions = $input.all();\n\n// Get today's date\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\n// Calculate date 14 days from now\nconst twoWeeks = new Date(today);\ntwoWeeks.setDate(twoWeeks.getDate() + 14);\n\n// Array to store annual renewals\nconst annualRenewals = [];\n\n// Check each subscription\nfor (const item of subscriptions) {\n  const sub = item.json;\n  \n  // Check if it's an annual subscription using Type field\n  if (sub.Type && (sub.Type.toLowerCase() === 'annually' || sub.Type.toLowerCase() === 'annual')) {\n    \n    // Check next_payment_date from Google Sheet\n    if (sub.next_payment_date) {\n      const paymentDate = new Date(sub.next_payment_date);\n      paymentDate.setHours(0, 0, 0, 0);\n      \n      // Check if payment is within next 14 days\n      if (paymentDate >= today && paymentDate <= twoWeeks) {\n        const daysUntil = Math.ceil((paymentDate - today) / (1000 * 60 * 60 * 24));\n        \n        annualRenewals.push({\n          ...sub,\n          isUrgent: true,\n          daysUntilRenewal: daysUntil,\n          renewalDate: paymentDate.toLocaleDateString()\n        });\n      }\n    }\n  }\n}\n\n// Generate urgent HTML email if there are annual renewals\nlet urgentHtml = '';\nif (annualRenewals.length > 0) {\n  urgentHtml = '<html><body style=\"font-family: Arial, sans-serif;\">';\n  urgentHtml += '<div style=\"background-color: #ff4444; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px;\">';\n  urgentHtml += '<h2 style=\"margin: 0;\">🚨 URGENT: Annual Subscription Renewal Alert</h2>';\n  urgentHtml += '</div>';\n  \n  urgentHtml += '<p style=\"font-size: 16px; color: #333;\">You have <strong>' + annualRenewals.length + '</strong> annual subscription(s) renewing in the next 14 days:</p>';\n  \n  urgentHtml += '<table style=\"border-collapse: collapse; width: 100%; margin-bottom: 20px;\">';\n  urgentHtml += '<tr style=\"background-color: #ffcccc;\">';\n  urgentHtml += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Subscription</th>';\n  urgentHtml += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Amount</th>';\n  urgentHtml += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Renewal Date</th>';\n  urgentHtml += '<th style=\"border: 1px solid #ddd; padding: 12px; text-align: left;\">Days Until Renewal</th>';\n  urgentHtml += '</tr>';\n  \n  for (const renewal of annualRenewals) {\n    const urgencyColor = renewal.daysUntilRenewal <= 7 ? '#ff6666' : '#ffcccc';\n    urgentHtml += '<tr style=\"background-color: ' + urgencyColor + ';\">';\n    urgentHtml += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + renewal.Name + '</td>';\n    urgentHtml += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + renewal.Currency + ' ' + renewal.Amount + '</td>';\n    urgentHtml += '<td style=\"border: 1px solid #ddd; padding: 12px;\">' + renewal.renewalDate + '</td>';\n    urgentHtml += '<td style=\"border: 1px solid #ddd; padding: 12px; font-weight: bold;\">' + renewal.daysUntilRenewal + ' days</td>';\n    urgentHtml += '</tr>';\n  }\n  urgentHtml += '</table>';\n  \n  urgentHtml += '<div style=\"background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-top: 20px;\">';\n  urgentHtml += '<p style=\"margin: 0; font-weight: bold;\">⚠️ Action Required:</p>';\n  urgentHtml += '<p style=\"margin: 5px 0 0 0;\">Please review these subscriptions and decide whether to renew or cancel before the renewal date.</p>';\n  urgentHtml += '</div>';\n  \n  urgentHtml += '<hr style=\"margin: 20px 0;\">';\n  urgentHtml += '<p style=\"color: #666; font-size: 12px;\">This is an automated urgent renewal alert.</p>';\n  urgentHtml += '</body></html>';\n}\n\n// Get email from first subscription\nconst email = subscriptions[0]?.json?.email;\n\n// Return all subscriptions with urgent flag and HTML added\nconst result = subscriptions.map(item => {\n  const sub = item.json;\n  const urgentRenewal = annualRenewals.find(r => r.Name === sub.Name);\n  \n  return {\n    json: {\n      ...sub,\n      isUrgent: urgentRenewal ? true : false,\n      daysUntilRenewal: urgentRenewal ? urgentRenewal.daysUntilRenewal : null,\n      hasUrgentAnnualRenewals: annualRenewals.length > 0,\n      urgentHtml: urgentHtml,\n      email: email\n    }\n  };\n});\n\nreturn result;"
+      },
+      "id": "d1e89859-7106-4b98-9967-99c3e07e237b",
+      "name": "Check Annual Renewals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7328,
+        2480
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "id-1",
+                    "leftValue": "={{ $json.hasUrgentAnnualRenewals }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Urgent Annual Alert"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "id-2",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Regular Summary"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "1"
+        }
+      },
+      "id": "a4ca1981-249f-46f2-a410-c1499e9083ca",
+      "name": "Route By Urgency",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        7552,
+        2480
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "<9.sathish@gmail.com>",
+        "toEmail": "={{ $json.email }}",
+        "subject": "🚨 URGENT: Annual Subscription Renewal Alert",
+        "html": "={{ $json.urgentHtml }}",
+        "options": {}
+      },
+      "id": "fba35619-f94e-43b6-8a89-356b0afad830",
+      "name": "Send Urgent Annual Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        7776,
+        2576
+      ],
+      "webhookId": "29548268-922c-4cee-abcb-acffb8b7265e",
+      "credentials": {
+        "smtp": {
+          "id": "Wfa7a0NVshWkVPON",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all subscription items from Calculate Next Payment Dates\nconst subscriptions = $('Calculate Next Payment Dates').all();\n\n// Add next_payment_date field equal to calculated_next_payment for each item\nconst updatedSubscriptions = subscriptions.map(item => {\n  const sub = item.json;\n  \n  return {\n    json: {\n      ...sub,\n      next_payment_date: sub.calculated_next_payment\n    }\n  };\n});\n\nreturn updatedSubscriptions;"
+      },
+      "id": "4a992cc7-e4cb-45bd-8e65-a1b0e66bf811",
+      "name": "Pass Through Data1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7104,
+        2480
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Weekly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Read Subscriptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Subscriptions": {
+      "main": [
+        [
+          {
+            "node": "Calculate Next Payment Dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Due Dates": {
+      "main": [
+        [
+          {
+            "node": "Check If Any Due",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Any Due": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Next Payment Dates": {
+      "main": [
+        [
+          {
+            "node": "Update Next Payment Dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Annual Renewals": {
+      "main": [
+        [
+          {
+            "node": "Route By Urgency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Urgency": {
+      "main": [
+        [
+          {
+            "node": "Send Urgent Annual Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze Due Dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Next Payment Dates": {
+      "main": [
+        [
+          {
+            "node": "Pass Through Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pass Through Data1": {
+      "main": [
+        [
+          {
+            "node": "Check Annual Renewals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "307a3f2f-9ab1-4cc0-bea6-a1aace7768a7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8a6f70608b2179dcdb4245c94a4c86eb92c39f03d829e8c791f11691c045c684"
+  },
+  "id": "BUlZJ7rXRjE8jDFy",
+  "tags": []
+}
